@@ -1,7 +1,15 @@
+import { getDailyPrompts } from "@/actions/public";
 import TestimonialCarousel from "@/components/TestimonialCarousel";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import faqs from "@/data/faqs";
 import {
   BarChart2,
   Book,
@@ -34,7 +42,9 @@ const features = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const advice = await getDailyPrompts();
+
   return (
     <div className="container relative mx-auto px-4 pt-16 pb-16">
       <div className="max-w-5xl mx-auto text-center space-y-8">
@@ -66,7 +76,7 @@ export default function Home() {
             </div>
             <div className="space-y-4 p-4">
               <h3 className="text-xl font-semibold text-gray-200">
-                daily prompts
+                {advice ? advice : "What's on your mind?"}
               </h3>
               <Skeleton className="h-4 bg-gray-900 rounded w-3/4" />
               <Skeleton className="h-4 bg-gray-900 rounded w-full" />
@@ -185,6 +195,45 @@ export default function Home() {
 
       {/* Carousel */}
       <TestimonialCarousel />
+
+      {/* FAQs */}
+      <div className="mt-24">
+        <h2 className="text-3xl font-bold text-center mb-12 text-orange-900">
+          Frequently Asked Questions
+        </h2>
+        <Accordion type="single" collapsible className="w-full mx-auto">
+          {faqs.map((faq, index) => {
+            return (
+              <AccordionItem value={`item-${index}`} key={index}>
+                <AccordionTrigger className="text-orange-900 text-xl">
+                  {faq.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-orange-700">
+                  {faq.a}
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
+      </div>
+      <div className="mt-24">
+        <Card className="bg-gradient-to-t from-orange-100 to-amber-100">
+          <CardContent className="p-12 text-center">
+            <h2 className="text-3xl font-bold text-orange-900 mb-6">
+              Start reflecting on your journey today
+            </h2>
+            <p className="text-lg text-orange-700 mb-8 max-w-2xl mx-auto">
+              join thousand of writers who have already discovered the power of
+              digital journaling
+            </p>
+            <Link href={"/dashboard"}>
+              <Button size="lg" variant="journal" className="animate-bounce">
+                Get Started for free <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
