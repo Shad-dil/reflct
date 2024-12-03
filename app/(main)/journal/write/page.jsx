@@ -49,6 +49,7 @@ const JournalEntryPage = () => {
     handleSubmit,
     control,
     getValues,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(journalSchema),
@@ -86,6 +87,15 @@ const JournalEntryPage = () => {
       moodQuery: mood.pixabayQuery,
     });
   });
+
+  useEffect(() => {
+    if (createdCollection) {
+      setIsCollectionDialogOpen(false);
+      fetchCollections();
+      setValue("collectionId", createCollection.id);
+      toast.success(`Collection ${createdCollection.name} is created`);
+    }
+  }, [createdCollection]);
 
   const handleCreateCollection = async (data) => {
     createCollectionFn(data);
@@ -243,7 +253,7 @@ const JournalEntryPage = () => {
           )}
         </div>
         <div className="space-y-4 flex">
-          <Button variant="journal" type="submit">
+          <Button variant="journal" type="submit" disabled={actionLoading}>
             Publish
           </Button>
         </div>

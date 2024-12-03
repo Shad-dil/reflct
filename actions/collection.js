@@ -5,7 +5,9 @@ import { revalidatePath } from "next/cache";
 
 export async function createCollection(data) {
   try {
-    const { userId } = await auth;
+    const authResult = await auth();
+
+    const { userId } = authResult;
     if (!userId) throw new Error("User is not authenticated");
     const user = await db.user.findUnique({
       where: {
