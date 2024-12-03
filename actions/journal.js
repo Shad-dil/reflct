@@ -6,7 +6,11 @@ import { revalidatePath } from "next/cache";
 import { getPixabayImage } from "./public";
 export async function createjournalEntry(data) {
   try {
-    const { userId } = await auth();
+    // const { userId } = await auth();
+    const authResult = await auth();
+
+    const { userId } = authResult;
+
     if (!userId) throw new Error("unAuthorized");
 
     //ArcJet Rate Limiting

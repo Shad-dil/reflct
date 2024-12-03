@@ -1,7 +1,9 @@
 "use client";
+import { createCollection, getCollection } from "@/actions/collection";
 import { createjournalEntry } from "@/actions/journal";
 import { getMoodById, MOODS } from "@/app/lib/moods";
 import { journalSchema } from "@/app/lib/schema";
+import CollectionForm from "@/components/CollectionForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,7 +18,7 @@ import useFetch from "@/hooks/use-fetch";
 import { zodResolver } from "@hookform/resolvers/zod";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import "react-quill-new/dist/quill.snow.css";
 import { BarLoader } from "react-spinners";
@@ -24,6 +26,24 @@ import { toast } from "sonner";
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
 const JournalEntryPage = () => {
+  const [isCollectionDialogOpen, setIsCollectionDialogOpen] = useState(false);
+  const {
+    data: actionResult,
+    loading: actionLoading,
+    fn: actionFn,
+  } = useFetch(createjournalEntry);
+  const {
+    data: collections = [],
+    loading: collectionsLoading,
+    fn: fetchCollections,
+  } = useFetch(getCollection);
+  console.log(collections);
+  const {
+    data: createdCollection,
+    loading: createCollectionLoading,
+    fn: createCollectionFn,
+  } = useFetch(createCollection);
+
   const {
     register,
     handleSubmit,
@@ -40,15 +60,11 @@ const JournalEntryPage = () => {
     },
   });
 
-  const {
-    data: actionResult,
-    loading: actionLoading,
-    fn: actionFn,
-  } = useFetch(createjournalEntry);
-
   const router = useRouter();
 
-  const isLoading = actionLoading;
+  useEffect(() => {
+    fetchCollections();
+  }, []);
 
   useEffect(() => {
     if (actionResult && !actionLoading) {
@@ -70,6 +86,11 @@ const JournalEntryPage = () => {
       moodQuery: mood.pixabayQuery,
     });
   });
+
+  const handleCreateCollection = async (data) => {
+    createCollectionFn(data);
+  };
+  const isLoading = actionLoading || collectionsLoading;
   return (
     <div className="py-8">
       <form className="space-y-2 mx-auto" onSubmit={onSubmit}>
@@ -172,11 +193,49 @@ const JournalEntryPage = () => {
           <label className="text-sm font-md">
             Add to your collection (optional)
           </label>
-          {/* <Controller
-            name="content"
+          <Controller
+            name="collectionId"
             control={control}
-            render={({ field }) => {}}
-          /> */}
+            render={({ field }) => {
+              return (
+                <Select
+                  onValueChange={(value) => {
+                    if (value === "new") {
+                      setIsCollectionDialogOpen(true);
+                    } else {
+                      field.onChange(value);
+                    }
+                  }}
+                  value={field.value}
+                  className={`py-5 md:text-md ${
+                    errors.title ? "border-red-500" : ""
+                  }`}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose Collection ..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {collections.map((collection) => {
+                      return (
+                        <SelectItem
+                          value={collection.id}
+                          key={collection.id}
+                          className="flex items-center gap-2"
+                        >
+                          {collection.name}
+                        </SelectItem>
+                      );
+                    })}
+                    <SelectItem value="new">
+                      <span className="text-orange-600">
+                        + Create New Collection...
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              );
+            }}
+          />
           {errors?.collectionId && (
             <span className="text-red-500 text-sm">
               {errors.collectionId.message}
@@ -189,6 +248,12 @@ const JournalEntryPage = () => {
           </Button>
         </div>
       </form>
+      <CollectionForm
+        loading={createCollectionLoading}
+        onSuccess={handleCreateCollection}
+        open={isCollectionDialogOpen}
+        setOpen={setIsCollectionDialogOpen}
+      />
     </div>
   );
 };
