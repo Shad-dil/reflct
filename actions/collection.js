@@ -49,3 +49,57 @@ export async function getCollection() {
 
   return collections;
 }
+
+export async function getSingleCollection({ collectionId }) {
+  const authResult = await auth();
+
+  const { userId } = authResult;
+  if (!userId) throw new Error("User is not authenticated");
+  const user = await db.user.findUnique({
+    where: {
+      clerkUserId: userId,
+    },
+  });
+  if (!user) throw new Error("User Not Found");
+  const collections = await db.collection.findUnique({
+    where: {
+      userId: user.id,
+      id: collectionId,
+    },
+  });
+
+  return collections;
+}
+
+export async function deleteCollection(collectionId) {
+  try {
+    const authResult = await auth();
+
+    const { userId } = authResult;
+    if (!userId) throw new Error("User  is not authenticated");
+    const user = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+      },
+    });
+    if (!user) throw new Error("User  Not Found");
+
+    // Await the findFirst call
+    const collection = await db.collection.findFirst({
+      where: {
+        id: collectionId,
+      },
+    });
+    if (!collection) throw new Error("Collection Not Found");
+
+    // Now delete the collection
+    await db.collection.delete({
+      where: {
+        id: collectionId,
+      },
+    });
+    return true;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}

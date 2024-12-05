@@ -55,7 +55,7 @@ export async function getAnalytics(period = "30d") {
     acc[date].count += 1;
     acc[date].entries.push(entry);
     return acc;
-  });
+  }, {});
 
   const analyticsData = Object.entries(moodData).map(([date, data]) => ({
     date,
