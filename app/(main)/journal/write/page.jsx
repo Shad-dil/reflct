@@ -37,7 +37,7 @@ const JournalEntryPage = () => {
     loading: collectionsLoading,
     fn: fetchCollections,
   } = useFetch(getCollection);
-  console.log(collections);
+
   const {
     data: createdCollection,
     loading: createCollectionLoading,

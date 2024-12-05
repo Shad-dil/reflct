@@ -1,19 +1,14 @@
 "use server";
-import { MOODS } from "@/app/lib/moods";
+import { getMoodById, MOODS } from "@/app/lib/moods";
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { getPixabayImage } from "./public";
 export async function createjournalEntry(data) {
   try {
-    // const { userId } = await auth();
     const authResult = await auth();
-
     const { userId } = authResult;
-
     if (!userId) throw new Error("unAuthorized");
-
-    //ArcJet Rate Limiting
 
     const user = await db.user.findUnique({
       where: {
@@ -46,5 +41,56 @@ export async function createjournalEntry(data) {
     return entry;
   } catch (error) {
     throw new Error(error.message);
+  }
+}
+
+export async function getJournalEntries({
+  collectionId,
+  orderBy = "desc",
+} = {}) {
+  try {
+    const authResult = await auth();
+    const { userId } = authResult;
+    if (!userId) throw new Error("unAuthorized");
+    const user = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+      },
+    });
+    if (!user) throw new Error("User Not Found");
+    const entries = await db.entry.findMany({
+      where: {
+        userId: user.id,
+        ...(collectionId === "unorganized"
+          ? { collectionId: null }
+          : collectionId
+          ? { collectionId }
+          : {}),
+      },
+      include: {
+        collection: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: orderBy,
+      },
+    });
+    const entriesWithMoodData = entries.map((entry) => ({
+      ...entry,
+      moodData: getMoodById(entry.mood),
+    }));
+
+    return {
+      success: true,
+      data: {
+        entries: entriesWithMoodData,
+      },
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
 }

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { BarLoader } from "react-spinners";
-
+export const metadata = {
+  title: "Write | Reflct",
+  description: "Journal App",
+};
 const WriteLayout = ({ children }) => {
   return (
     <div className="container mx-auto px-4 py-8">
