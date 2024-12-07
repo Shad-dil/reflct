@@ -16,6 +16,7 @@ export async function createjournalEntry(data) {
       },
     });
     if (!user) throw new Error("User Not Found");
+    if (!data.mood) throw new Error("Mood is required");
     const mood = MOODS[data.mood.toUpperCase()];
     if (!mood) throw new Error("Invalid Mood");
 
@@ -187,6 +188,7 @@ export async function updateJournalEntry(data) {
     });
     if (!existingEntry) throw new Error("Entry Not Found");
 
+    if (!data.mood) throw new Error("Mood is required");
     const mood = MOODS[data.mood.toUpperCase()];
     if (!mood) throw new Error("Invalid Mood");
 
