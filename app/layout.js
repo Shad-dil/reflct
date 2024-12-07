@@ -1,10 +1,13 @@
-import { Inter } from "next/font/google";
-
 import Header from "@/components/header";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
-const inter = Inter({ subset: ["latin"] });
+
+const inter = Inter({
+  subsets: ["latin", "latin-ext"], // Example of multiple subsets
+});
+
 export const metadata = {
   title: "reflct",
   description: "Journal App",
