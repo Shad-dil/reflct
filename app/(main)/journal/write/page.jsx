@@ -1,6 +1,12 @@
 "use client";
 import { createCollection, getCollection } from "@/actions/collection";
-import { createjournalEntry } from "@/actions/journal";
+import {
+  createjournalEntry,
+  getDraft,
+  getJournalEntry,
+  saveDraft,
+  updateJournalEntry,
+} from "@/actions/journal";
 import { getMoodById, MOODS } from "@/app/lib/moods";
 import { journalSchema } from "@/app/lib/schema";
 import CollectionForm from "@/components/CollectionForm";
@@ -17,7 +23,7 @@ import {
 import useFetch from "@/hooks/use-fetch";
 import { zodResolver } from "@hookform/resolvers/zod";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import "react-quill-new/dist/quill.snow.css";
@@ -26,12 +32,28 @@ import { toast } from "sonner";
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
 const JournalEntryPage = () => {
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("edit");
+  const [isEditMode, setIsEditMode] = useState(false);
   const [isCollectionDialogOpen, setIsCollectionDialogOpen] = useState(false);
+  const {
+    data: existingEntry,
+    loading: entryLoading,
+    fn: fetchEntry,
+  } = useFetch(getJournalEntry);
+
+  const {
+    data: draftData,
+    loading: draftLoading,
+    fn: fetchDraft,
+  } = useFetch(getDraft);
+
+  const { loading: savingDraft, fn: saveDraftFn } = useFetch(saveDraft);
   const {
     data: actionResult,
     loading: actionLoading,
     fn: actionFn,
-  } = useFetch(createjournalEntry);
+  } = useFetch(isEditMode ? updateJournalEntry : createjournalEntry);
   const {
     data: collections = [],
     loading: collectionsLoading,
@@ -50,6 +72,7 @@ const JournalEntryPage = () => {
     control,
     getValues,
     setValue,
+    reset,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(journalSchema),
@@ -65,16 +88,53 @@ const JournalEntryPage = () => {
 
   useEffect(() => {
     fetchCollections();
-  }, []);
+    if (editId) {
+      setIsEditMode(true);
+      fetchEntry();
+    } else {
+      setIsEditMode(false);
+      fetchDraft();
+    }
+  }, [editId]);
+
+  useEffect(() => {
+    if (isEditMode && existingEntry) {
+      reset({
+        title: existingEntry.title || "",
+        content: existingEntry.content || "",
+        mood: existingEntry.mood || "",
+        collectionId: existingEntry.collectionId,
+      });
+    } else if (draftData?.success && draftData?.data) {
+      reset({
+        title: draftData.data.title || "",
+        content: draftData.data.content || "",
+        mood: draftData.data.mood || "",
+        collectionId: "",
+      });
+    } else {
+      reset({
+        title: "",
+        content: "",
+        mood: "",
+        collectionId: "",
+      });
+    }
+  }, [draftData, isEditMode, existingEntry]);
 
   useEffect(() => {
     if (actionResult && !actionLoading) {
+      if (!isEditMode) {
+        saveDraftFn({ title: "", content: "", mood: "" });
+      }
       router.push(
         `/collection/${
           actionResult.collectionId ? actionResult.collectionId : "unorganized"
         }`
       );
-      toast.success("Entry Created Successfully !");
+      toast.success(
+        `Entry ${isEditMode ? "Updated" : "Created"} Successfully !`
+      );
     }
   }, [actionResult, actionLoading]);
 
@@ -85,6 +145,7 @@ const JournalEntryPage = () => {
       ...data,
       moodScore: mood.score,
       moodQuery: mood.pixabayQuery,
+      ...(isEditMode && { id: editId }),
     });
   });
 
@@ -100,12 +161,17 @@ const JournalEntryPage = () => {
   const handleCreateCollection = async (data) => {
     createCollectionFn(data);
   };
-  const isLoading = actionLoading || collectionsLoading;
+  const isLoading =
+    actionLoading ||
+    collectionsLoading ||
+    entryLoading ||
+    draftLoading ||
+    savingDraft;
   return (
     <div className="py-8">
       <form className="space-y-2 mx-auto" onSubmit={onSubmit}>
         <h1 className="text-5xl md:text-6xl title-gradient">
-          Whats on your mind?
+          {isEditMode ? "Edit Entry" : "Whats on your mind?"}
         </h1>
         {isLoading && <BarLoader color="orange" width={"100%"} />}
         <div className="space-y-2">
@@ -252,10 +318,21 @@ const JournalEntryPage = () => {
             </span>
           )}
         </div>
-        <div className="space-y-4 flex">
+        <div className="space-x-4 flex">
           <Button variant="journal" type="submit" disabled={actionLoading}>
-            Publish
+            {isEditMode ? "Update" : "Publish"}
           </Button>
+          {isEditMode && (
+            <Button
+              variant="destructive"
+              onClick={(e) => {
+                e.preventDefault();
+                router.push(`/journal/${existingEntry.id}`);
+              }}
+            >
+              Cancel
+            </Button>
+          )}
         </div>
       </form>
       <CollectionForm
