@@ -15,7 +15,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider frontendApi={process.env.CLERK_FRONTEND_API}>
       <html lang="en">
         <body className={`${inter.className}`}>
           <div className="bg-[url('/bg.jpg')] opacity-100 -z-10 inset-0" />
