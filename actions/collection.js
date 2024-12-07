@@ -15,6 +15,21 @@ export async function createCollection(data) {
       },
     });
     if (!user) throw new Error("User Not Found");
+    const existingCollection = await prisma.collection.findUnique({
+      where: {
+        name_userId: {
+          name: data.name, // replace with the actual name
+          userId: user.id, // replace with the actual user ID
+        },
+      },
+    });
+
+    if (existingCollection) {
+      // Handle the case where the collection already exists
+      throw new Error(
+        "A collection with this name already exists for this user."
+      );
+    }
     const collection = db.collection.create({
       data: {
         name: data.name,
