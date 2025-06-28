@@ -10,7 +10,8 @@ const Page = async ({ params }) => {
   const { Id } = await params;
   const entry = await getJournalEntry(Id);
   const mood = await getMoodById(entry.mood);
-
+  const moodColor = mood?.color || "gray";
+  const moodLabel = mood?.label || "Unknown";
   return (
     <>
       <div className="space-y-6 p-4">
@@ -38,12 +39,12 @@ const Page = async ({ params }) => {
             <Badge
               variant={"outline"}
               style={{
-                backgroundColor: `var(--${mood?.color}-50)`,
-                color: `var(--${mood?.color}-700)`,
-                borderColor: `var(--${mood?.color}-200)`,
+                backgroundColor: `var(--${moodColor}-50)`,
+                color: `var(--${moodColor}-700)`,
+                borderColor: `var(--${moodColor}-200)`,
               }}
             >
-              Feeling : {mood?.label}
+              Feeling : {moodLabel}
             </Badge>
           </div>
         </div>
