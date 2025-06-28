@@ -272,6 +272,7 @@ export const MOODS = {
 };
 
 export const getMoodById = (moodId) => {
+  if (!moodId || typeof moodId !== "string") return undefined;
   return MOODS[moodId.toUpperCase()];
 };
 

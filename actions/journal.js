@@ -17,7 +17,11 @@ export async function createjournalEntry(data) {
     });
     if (!user) throw new Error("User Not Found");
     if (!data.mood) throw new Error("Mood is required");
+
+    if (!data.mood || typeof data.mood !== "string")
+      throw new Error("Mood is required and must be a string");
     const mood = MOODS[data.mood.toUpperCase()];
+
     if (!mood) throw new Error("Invalid Mood");
 
     const moodImageUrl = await getPixabayImage(data.moodQuery);
