@@ -119,7 +119,7 @@ const MoodAnalytics = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold flex items-center gap-2">
-                {getMoodById(stats.mostFrequentMood)?.emoji}{" "}
+                {getMoodById(stats.mostFrequentMood)?.emoji || "❓"}{" "}
                 {getMoodTrend(stats.averageScore)}
               </div>
             </CardContent>
