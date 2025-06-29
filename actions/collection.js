@@ -1,5 +1,5 @@
 "use server";
-import { db } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
@@ -9,7 +9,7 @@ export async function createCollection(data) {
 
     const { userId } = authResult;
     if (!userId) throw new Error("User is not authenticated");
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         clerkUserId: userId,
       },
@@ -30,7 +30,7 @@ export async function createCollection(data) {
         "A collection with this name already exists for this user."
       );
     }
-    const collection = db.collection.create({
+    const collection = prisma.collection.create({
       data: {
         name: data.name,
         description: data.description,
@@ -49,13 +49,13 @@ export async function getCollection() {
 
   const { userId } = authResult;
   if (!userId) throw new Error("User is not authenticated");
-  const user = await db.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: {
       clerkUserId: userId,
     },
   });
   if (!user) throw new Error("User Not Found");
-  const collections = db.collection.findMany({
+  const collections = prisma.collection.findMany({
     where: {
       userId: user.id,
     },
@@ -70,13 +70,13 @@ export async function getSingleCollection({ collectionId }) {
 
   const { userId } = authResult;
   if (!userId) throw new Error("User is not authenticated");
-  const user = await db.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: {
       clerkUserId: userId,
     },
   });
   if (!user) throw new Error("User Not Found");
-  const collections = await db.collection.findUnique({
+  const collections = await prisma.collection.findUnique({
     where: {
       userId: user.id,
       id: collectionId,
@@ -92,7 +92,7 @@ export async function deleteCollection(collectionId) {
 
     const { userId } = authResult;
     if (!userId) throw new Error("User  is not authenticated");
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         clerkUserId: userId,
       },
@@ -100,7 +100,7 @@ export async function deleteCollection(collectionId) {
     if (!user) throw new Error("User  Not Found");
 
     // Await the findFirst call
-    const collection = await db.collection.findFirst({
+    const collection = await prisma.collection.findFirst({
       where: {
         id: collectionId,
       },
@@ -108,7 +108,7 @@ export async function deleteCollection(collectionId) {
     if (!collection) throw new Error("Collection Not Found");
 
     // Now delete the collection
-    await db.collection.delete({
+    await prisma.collection.delete({
       where: {
         id: collectionId,
       },

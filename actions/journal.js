@@ -1,6 +1,6 @@
 "use server";
 import { getMoodById, MOODS } from "@/app/lib/moods";
-import { db } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { getPixabayImage } from "./public";
@@ -10,7 +10,7 @@ export async function createjournalEntry(data) {
     const { userId } = authResult;
     if (!userId) throw new Error("unAuthorized");
 
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         clerkUserId: userId,
       },
@@ -25,7 +25,7 @@ export async function createjournalEntry(data) {
     if (!mood) throw new Error("Invalid Mood");
 
     const moodImageUrl = await getPixabayImage(data.moodQuery);
-    const entry = db.entry.create({
+    const entry = prisma.entry.create({
       data: {
         title: data.title,
         content: data.content,
@@ -37,7 +37,7 @@ export async function createjournalEntry(data) {
       },
     });
 
-    await db.draft.deleteMany({
+    await prisma.draft.deleteMany({
       where: {
         userId: user.id,
       },
@@ -57,13 +57,13 @@ export async function getJournalEntries({
     const authResult = await auth();
     const { userId } = authResult;
     if (!userId) throw new Error("unAuthorized");
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         clerkUserId: userId,
       },
     });
     if (!user) throw new Error("User Not Found");
-    const entries = await db.entry.findMany({
+    const entries = await prisma.entry.findMany({
       where: {
         userId: user.id,
         ...(collectionId === "unorganized"
@@ -105,13 +105,13 @@ export async function getJournalEntry(id) {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
     });
 
     if (!user) throw new Error("User not found");
 
-    const entry = await db.entry.findFirst({
+    const entry = await prisma.entry.findFirst({
       where: {
         id,
         userId: user.id,
@@ -140,7 +140,7 @@ export async function deleteJournal(id) {
 
     const { userId } = authResult;
     if (!userId) throw new Error("User  is not authenticated");
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         clerkUserId: userId,
       },
@@ -148,7 +148,7 @@ export async function deleteJournal(id) {
     if (!user) throw new Error("User  Not Found");
 
     // Await the findFirst call
-    const journal = await db.entry.findFirst({
+    const journal = await prisma.entry.findFirst({
       where: {
         userId: user.id,
         id,
@@ -157,7 +157,7 @@ export async function deleteJournal(id) {
     if (!journal) throw new Error("Entry Not Found");
 
     // Now delete the Journal
-    await db.entry.delete({
+    await prisma.entry.delete({
       where: {
         id,
       },
@@ -176,7 +176,7 @@ export async function updateJournalEntry(data) {
 
     const { userId } = authResult;
     if (!userId) throw new Error("User  is not authenticated");
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         clerkUserId: userId,
       },
@@ -184,7 +184,7 @@ export async function updateJournalEntry(data) {
     if (!user) throw new Error("User  Not Found");
 
     // Await the findFirst call
-    const existingEntry = await db.entry.findFirst({
+    const existingEntry = await prisma.entry.findFirst({
       where: {
         userId: user.id,
         id: data.id,
@@ -193,13 +193,17 @@ export async function updateJournalEntry(data) {
     if (!existingEntry) throw new Error("Entry Not Found");
 
     if (!data.mood) throw new Error("Mood is required");
+
+    if (!data.mood || typeof data.mood !== "string")
+      throw new Error("Mood is required and must be a string");
     const mood = MOODS[data.mood.toUpperCase()];
+
     if (!mood) throw new Error("Invalid Mood");
 
     let moodImageUrl = existingEntry.moodImageUrl;
     if (existingEntry.mood !== mood.id)
       moodImageUrl = await getPixabayImage(data.moodQuery);
-    const updatedEntry = db.entry.update({
+    const updatedEntry = prisma.entry.update({
       where: { id: data.id },
       data: {
         title: data.title,
@@ -226,7 +230,7 @@ export async function getDraft(data) {
 
     const { userId } = authResult;
     if (!userId) throw new Error("User  is not authenticated");
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         clerkUserId: userId,
       },
@@ -234,7 +238,7 @@ export async function getDraft(data) {
     if (!user) throw new Error("User  Not Found");
 
     // Await the findFirst call
-    const draft = await db.draft.findFirst({
+    const draft = await prisma.draft.findFirst({
       where: {
         userId: user.id,
       },
@@ -252,7 +256,7 @@ export async function saveDraft(data) {
 
     const { userId } = authResult;
     if (!userId) throw new Error("User  is not authenticated");
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         clerkUserId: userId,
       },
@@ -260,7 +264,7 @@ export async function saveDraft(data) {
     if (!user) throw new Error("User  Not Found");
 
     // Await the findFirst call
-    const draft = await db.entry.upsert({
+    const draft = await prisma.entry.upsert({
       where: {
         userId: user.id,
       },

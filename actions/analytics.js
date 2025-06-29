@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 
 export async function getAnalytics(period = "30d") {
@@ -8,7 +8,7 @@ export async function getAnalytics(period = "30d") {
   const { userId } = authResult;
   if (!userId) throw new Error("unAuthorized");
 
-  const user = await db.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: {
       clerkUserId: userId,
     },
@@ -29,7 +29,7 @@ export async function getAnalytics(period = "30d") {
       break;
   }
 
-  const entries = await db.entry.findMany({
+  const entries = await prisma.entry.findMany({
     where: {
       userId: user.id,
       createdAt: {
